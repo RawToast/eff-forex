@@ -8,5 +8,8 @@ object Price {
   def apply(value: Integer): Price =
     Price(BigDecimal(value))
 
+  def apply(value: Double): Price =
+    Price(BigDecimal(s"$value"))
+
   implicit val encoder: Encoder[Price] = deriveUnwrappedEncoder[Price]
 }

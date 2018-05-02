@@ -30,6 +30,12 @@ libraryDependencies ++= Seq(
   "io.circe"                       %% "circe-jawn"           % "0.8.0",
   "org.atnos"                      %% "eff"                  % "4.5.0",
   "org.atnos"                      %% "eff-monix"            % "4.5.0",
+  "org.atnos"                      %% "eff-fs2"              % "4.5.0",
+
+  "com.softwaremill.sttp"          %% "core"                            % "1.0.6",
+  "com.softwaremill.sttp"          %% "circe"                           % "1.0.6",
+  "com.softwaremill.sttp"          %% "async-http-client-backend-monix" % "1.0.6",
+
   "org.typelevel"                  %% "cats-core"            % "0.9.0",
   "org.zalando"                    %% "grafter"              % "2.3.0",
   "ch.qos.logback"                 %  "logback-classic"      % "1.2.3",
