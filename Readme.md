@@ -1,41 +1,46 @@
-# A local proxy for Forex rates
+# Forex
 
-Build a local proxy for getting Currency Exchange Rates
+Proxy for getting Currency Exchange Rates
 
-__Requirements__
+## Starting the server
 
-[Forex](forex) is a simple application that acts as a local proxy for getting exchange rates.
-It's a service that can be consumed by other internal services to get the exchange rate between a set of currencies, 
-so they don't have to care about the specifics of third-party providers.
+Add your apikey to `src/main/resources/reference.conf`
 
-We provide you with an initial scaffold for the application with some dummy interpretations/implementations. 
-For starters we would like you to try and understand the structure of the application,
-so you can use this as the base to address the following use case:
+`sbt run` - starts a server listening on port 8888.
 
-> An internal user of the application should be able to ask for an exchange rate between 2 given currencies,
-and get back a rate that is not older than 5 minutes. The application should at least support 10.000 requests per day.
+# Reqs
 
-In practice, this should require the following points:
-````
-1. Create a `live` interpreter for the `oneforge` service. This should consume the [1forge API](https://1forge.com/forex-data-api/api-documentation), and do so using the [free tier](https://1forge.com/forex-data-api/pricing).
+* The application should at least support 10000 requests per day
+  * Free tier is limited to 1000 requests a day
+  * But prices can be up to 5 minutes old, so caching could work.
+    
+## Thoughts
 
-2. Adapt the `rates` processes (if necessary) to make sure you cover the requirements of the use case, and work around possible limitations of the third-party provider.
+* Lots of interesting new stuff here... (Eff, Monix, Grafter, etc.)
 
-3. Make sure the service's own API gets updated to reflect the changes you made in point 1 & 2.
-````
+* Considered using http4s client, would've had to replace Monix
+* Found that sttp provides a client that with both Monix and Circe support
+  
+* Looked into Akka Http route caching
+  * Did not seem to have enough control
+  
+* Whilst we can control a single pair using caching this does not help when there are
+  numerous pairs.
+  * Even with 5 minute caching the limit is would easily be reached
+  
+* 1Forge allows us to query for all pairs for the same cost as requesting a single pair
+  
+* Handling exceptions via ADTs is nice, just needed more variants for alter native error codes/messages
+    
+# Post task notes
 
-Some notes:
-- Don't feel limited by the existing dependencies; you can include others.
-- The algebras/interfaces provided act as an example/starting point. Feel free to add to improve or built on it when needed.
-- The `rates` processes currently only use a single service. Don't feel limited, and do add others if you see fit.
-- It's great for downstream users of the service (your colleagues) if the api returns descriptive errors in case something goes wrong.
-- Feel free to fix any unsafe methods you might encounter.
+* If I had more time, I would've attempted making a pure interpreter using the State effect / monad
+  * And tests...
+  
+* The caching could be improved in many ways
+  * Cache times could be reduced by calling the limits endpoint and calculating the best rate
+  * State could be held externally
+  
+* Could have moved the cache length into config
 
-Some of the traits/specifics we are looking for using this exercise:
-
-- How can you navigate through an existing codebase;
-- How easily do you pick up concepts, techniques and/or libraries you might not have encountered/used before;
-- How do you work with third-party APIs that might not be (as) complete (as we would wish them to be);
-- How do you work around restrictions;
-- What design choices do you make;
-- How do you think beyond the happy path.
+* Could have injected the sttp backend and used a mock backend for testing

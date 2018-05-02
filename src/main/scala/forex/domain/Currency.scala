@@ -39,6 +39,19 @@ object Currency {
     case "USD" | "usd" ⇒ USD
   }
 
+  def optFromString(s: String): Option[Currency] = s match {
+    case "AUD" | "aud" ⇒ Some(AUD)
+    case "CAD" | "cad" ⇒ Some(CAD)
+    case "CHF" | "chf" ⇒ Some(CHF)
+    case "EUR" | "eur" ⇒ Some(EUR)
+    case "GBP" | "gbp" ⇒ Some(GBP)
+    case "NZD" | "nzd" ⇒ Some(NZD)
+    case "JPY" | "jpy" ⇒ Some(JPY)
+    case "SGD" | "sgd" ⇒ Some(SGD)
+    case "USD" | "usd" ⇒ Some(USD)
+    case _ => None
+  }
+
   implicit val encoder: Encoder[Currency] =
     Encoder.instance[Currency] { show.show _ andThen Json.fromString }
 

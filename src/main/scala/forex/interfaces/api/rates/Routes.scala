@@ -31,5 +31,4 @@ case class Routes(
         }
       }
     }
-
 }

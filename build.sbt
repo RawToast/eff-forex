@@ -40,6 +40,11 @@ libraryDependencies ++= Seq(
   "org.zalando"                    %% "grafter"              % "2.3.0",
   "ch.qos.logback"                 %  "logback-classic"      % "1.2.3",
   "com.typesafe.scala-logging"     %% "scala-logging"        % "3.7.2",
+
+  "org.scalatest"                  %% "scalatest"            % "3.0.5"  % "test",
+
+  "com.github.tomakehurst" % "wiremock" % "2.12.0" % "test",
+
   compilerPlugin("org.spire-math"  %% "kind-projector"       % "0.9.4"),
   compilerPlugin("org.scalamacros" %% "paradise"             % "2.1.1" cross CrossVersion.full)
 )

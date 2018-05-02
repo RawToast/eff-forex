@@ -1,21 +1,18 @@
 package forex.main
 
 import forex.config._
-import forex.services.oneforge.OneForgeClient
+import forex.services.oneforge.{CurrencyPair, OneForgeClient}
 import forex.{processes => p, services => s}
 import org.zalando.grafter.macros._
 
 @readerOf[ApplicationConfig]
-case class Processes() {
+case class Processes(oneForgeClient: OneForgeClient) {
 
-//  implicit final lazy val _dummyOneForge: s.OneForge[AppEffect] =
-//    s.OneForge.dummy[AppStack]
-
-  final lazy val client = new OneForgeClient
+  final lazy val repository: Map[String, CurrencyPair] = Map.empty
 
   implicit final lazy val _liveOneForge: s.OneForge[AppEffect] =
-    s.OneForge.live[AppStack](client)
+    s.OneForge.live[AppStack](oneForgeClient)
 
-  final val Rates = p.Rates[AppEffect]
+  final lazy val Rates = p.Rates[AppEffect]
 
 }

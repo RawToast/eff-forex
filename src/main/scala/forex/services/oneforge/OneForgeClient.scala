@@ -5,35 +5,38 @@ import java.nio.ByteBuffer
 import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import com.softwaremill.sttp.circe.asJson
 import com.softwaremill.sttp.{sttp, _}
+import forex.config.{ApplicationConfig, OneforgeConfig}
 import forex.domain.{Price, Rate, Timestamp}
 import monix.eval.Task
 import monix.reactive.Observable
+import org.zalando.grafter.macros.readerOf
 
-class OneForgeClient {
+final case class CurrencyPair(symbol: String, bid: Double, ask: Double, price: Double, timestamp: Long)
 
-  import cats.syntax.show._
+trait RatesClient {
+  def fetchRates: Task[Either[Error, List[Rate]]]
+}
+
+@readerOf[ApplicationConfig]
+case class OneForgeClient(oneforge: OneforgeConfig) extends RatesClient {
+
   import io.circe.generic.auto._
 
-  implicit val monixBackend: SttpBackend[Task, Observable[ByteBuffer]] = AsyncHttpClientMonixBackend()
+  private implicit lazy val monixBackend: SttpBackend[Task, Observable[ByteBuffer]] = AsyncHttpClientMonixBackend()
 
-  final case class CurrencyPair(symbol: String, bid: Double, ask: Double, price: Double, timestamp: Long)
-
-  def fetchRate(pair: Rate.Pair): Task[Either[Error, Rate]] = {
-    val key = "TUQ8fBGuT2h83ZFyuRhlhI99I0g2Yqkz"
-    val fxpair = pair.from.show ++ pair.to.show
-    val url = s"https://forex.1forge.com/1.0.3/quotes?pairs=$fxpair&api_key=$key"
+  def fetchRates: Task[Either[Error, List[Rate]]] = {
+    lazy val url = s"${oneforge.baseurl}/${oneforge.apiversion}/quotes?api_key=${oneforge.apikey}"
 
     for {
       resp <- sttp.get(uri"$url")
               .response(asJson[List[CurrencyPair]])
               .send()
-      body = bodyOrError(resp)
-      // TODO use headOpt and move to left if there are no prices
-      singlePair = body.map(_.head)
-    } yield singlePair.map(cp => Rate(pair, Price(cp.price), Timestamp.from(cp.timestamp)))
+      bodyOrError = flattenResponse(resp)
+      rates = bodyOrError.map(convertToPairs)
+    } yield rates
   }
 
-  private def bodyOrError[A, B](r: com.softwaremill.sttp.Response[Either[A, B]]): Either[Error, B] = {
+  private def flattenResponse[A, B](r: com.softwaremill.sttp.Response[Either[A, B]]): Either[Error, B] =
     r.body match {
       case Left(_) => Left(Error.Generic("Response had no body"))
       case Right(body) => body match {
@@ -41,5 +44,13 @@ class OneForgeClient {
         case Right(value) => Right(value)
       }
     }
+
+  private def convertToPairs(currencyPairs: List[CurrencyPair]): List[Rate] = {
+    def toRatePair(cp: CurrencyPair) = Rate.Pair.fromString(cp.symbol)
+
+    currencyPairs.flatMap(cp => toRatePair(cp) match {
+      case Some(value) => Some(Rate(value, Price(cp.price), Timestamp.from(cp.timestamp)))
+      case None => None
+    })
   }
 }

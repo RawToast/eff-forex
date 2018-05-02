@@ -4,7 +4,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.model.HttpResponse
 import forex.processes._
 import forex.processes.rates.messages.Error
-import akka.http.scaladsl.model.StatusCodes.InternalServerError
+import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound}
 
 object ApiExceptionHandler {
 
@@ -12,6 +12,8 @@ object ApiExceptionHandler {
     server.ExceptionHandler {
       case re: RatesError ⇒
         ctx ⇒re match {
+          case Error.NotFound(msg) => ctx.complete(
+            HttpResponse(NotFound, entity = msg ))
           case Error.Generic(msg) => ctx.complete(
             HttpResponse(InternalServerError, entity = s"Something went wrong in the rates process: $msg" ))
           case Error.System(_) => ctx.complete(
