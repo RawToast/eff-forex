@@ -3,10 +3,10 @@ package forex.processes.rates
 import java.time.{OffsetDateTime, ZoneOffset}
 
 import cats.Monad
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.implicits._
 import forex.domain._
-import forex.services.{OneForge, oneforge}
+import forex.services.OneForge
 
 object Processes {
   def apply[F[_]]: Processes[F] =
@@ -18,6 +18,7 @@ object Processes {
 
 trait Processes[F[_]] {
 
+  import converters._
   import messages._
 
   val latestQuoteTime: () => OffsetDateTime
@@ -25,21 +26,24 @@ trait Processes[F[_]] {
   def get(request: GetRequest)(
            implicit M: Monad[F],
            OneForge: OneForge[F]
-         ): F[oneforge.Error Either Rate] = {
+         ): F[ErrorMessage Either Rate] = {
 
     val pair = Rate.Pair(request.from, request.to)
 
-    def retrieve(pair: Rate.Pair): F[Either[oneforge.Error, Rate]] =
-      OneForge.getCachedRate(pair)
-      .map(_.toRight(forex.services.oneforge.Error.NotFound("No rates for currency pair.")))
+    def retrieveFromCache(pair: Rate.Pair): F[Either[ErrorMessage, Rate]] =
+      OptionT(OneForge.getCachedRate(pair))
+          .toRight(forex.services.oneforge.Error.NotFound("No rates for currency pair."))
+            .leftMap(toProcessError)
+              .value
 
     for {
       cached <- OneForge.hasRateInCache(pair, latestQuoteTime())
-      rate <- if (cached) retrieve(pair)
+      rate <- if (cached) retrieveFromCache(pair)
               else EitherT(OneForge.getAllRates())
-                      .semiflatMap(OneForge.storeRates)
-                        .flatMapF(_ => retrieve(pair))
-                          .value
+                   .leftMap(toProcessError)
+                   .semiflatMap(OneForge.storeRates)
+                   .flatMapF(_ => retrieveFromCache(pair))
+                   .value
     } yield rate
   }
 }

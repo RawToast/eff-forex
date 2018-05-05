@@ -14,11 +14,11 @@ object Interpreters {
     m1: _task[R],
     m2: _writer[R],
     m3: _state[R]
-  ): Algebra[Eff[R, ?]] = new MemoryCached[R](client)
+  ): Algebra[Eff[R, ?]] = new LiveRates[R](client)
 }
 
 
-final class MemoryCached[R] private[oneforge](client: RatesClient)(
+final class LiveRates[R] private[oneforge](client: RatesClient)(
   implicit
   m1: _task[R],
   m2: _writer[R],
