@@ -1,13 +1,14 @@
 package forex
 
-import cats.data.Writer
+import cats.data.{State, Writer}
+import forex.domain.Rate
 import monix.eval.Task
 import org.atnos.eff._
 import org.zalando.grafter._
 
 package object main {
 
-  type AppStack = Fx.fx2[Task, Writer[String, ?]]
+  type AppStack = Fx.fx3[Task, Writer[String, ?], State[List[Rate], ?]]
   type AppEffect[R] = Eff[AppStack, R]
 
   def toStartErrorString(results: List[StartResult]): String =

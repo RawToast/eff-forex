@@ -5,12 +5,12 @@ import forex.services._
 package object converters {
   import messages._
 
-  def toProcessError[T <: Throwable](t: T): Error = t match {
-    case OneForgeError.Generic(msg) ⇒ Error.Generic(msg)
-    case OneForgeError.NotFound(msg) ⇒ Error.NotFound(msg)
-    case OneForgeError.System(err) ⇒ Error. System(err)
-    case e: Error                  ⇒ e
-    case e                         ⇒ Error.System(e)
+  def toProcessError[T <: Throwable](t: T): ErrorMessage = t match {
+    case OneForgeError.Generic(msg) ⇒ ErrorMessage.Generic(msg)
+    case OneForgeError.NotFound(msg) ⇒ ErrorMessage.NotFound(msg)
+    case OneForgeError.System(err) ⇒ ErrorMessage.System(err)
+    case e: ErrorMessage                  ⇒ e
+    case e                         ⇒ ErrorMessage.System(e)
   }
 
 }
